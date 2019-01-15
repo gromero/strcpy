@@ -36,73 +36,73 @@ my_strcpy:
 	addi	3,3,8   /* Fix r3 to use std instruction. */
 /* Find where the zero is located. */
 .Lcheck_zero:
-	rldicr.	5,0,0,7
+	andi.	7, 0, 0x00ff
+	beq	.Lfound_on_byte_0 /* NB: LSB0 notation. Power ISA uses MSB0 notation. */
+	andi.   7, 0, 0xff00
 	beq	.Lfound_on_byte_1
-	rldicr.	7,0,8,7
+	andis.  7, 0, 0x00ff
 	beq	.Lfound_on_byte_2
-	rldicr.	7,0,16,7
+	andis.  7, 0, 0xff00
 	beq	.Lfound_on_byte_3
-	rldicr.	7,0,24,7
+	rldicr. 7, 0, 24, 7
 	beq	.Lfound_on_byte_4
-	andis.	7,0,0xff00
+	rldicr. 7, 0, 16, 7
 	beq	.Lfound_on_byte_5
-	andis.	7,0,0xff
+	rldicr. 7, 0, 8 , 7
 	beq	.Lfound_on_byte_6
-	andi.	7,0,0xff00
-	beq	.Lfound_on_byte_7
 
-/* Treatment of each byte where the zero my be found, saving
-   the correct register data. */
-.Lfound_on_byte_8:
-	std	0,0(3)
-	b	.Lexit
+	/***
+	 * NUL char is on byte 7, hence store all
+	 * bytes using 'std' including it.
+	 */
+
+	/***
+	 * Copy all bytes from byte 0 to byte where NUL was found,
+	 * including NUL.
+	 */
 
 .Lfound_on_byte_7:
-	srdi	6,0,32
-	stw	6,0(3)
-	srdi	6,0,16
-	sth	6,4(3)
-	srdi	6,0,8
-	stb	6,6(3)
+	std	0, 0(3)
 	b	.Lexit
 
 .Lfound_on_byte_6:
-	srdi	6,0,32
-	stw	6,0(3)
-	srdi	6,0,16
-	sth	6,4(3)
+	stw	0, 0(3)
+	srdi	6, 0, 32
+	sth	6, 4(3)
+	srdi	6, 0, 40
+	stb	6, 6(3)
 	b	.Lexit
 
 .Lfound_on_byte_5:
-	srdi	6,0,32
-	stw	6,0(3)
-	srdi	6,0,24
-	stb	6,4(3)
+	stw	0, 0(3)
+	srdi	6, 0, 32
+	sth	6, 4(3)
 	b	.Lexit
 
 .Lfound_on_byte_4:
-	srdi	6,0,32
-	stw	6,0(3)
+	stw	0, 0(3)
+	srdi	6, 0, 32
+	stb	6, 4(3)
 	b	.Lexit
 
 .Lfound_on_byte_3:
-	srdi	6,0,48
-	sth	6,0(3)
-	srdi	6,0,40
-	stb	6,2(3)
+	stw	0, 0(3)
 	b	.Lexit
 
 .Lfound_on_byte_2:
-	srdi	6,0,48
-	sth	6,0(3)
+	sth	0, 0(3)
+	srdi	6, 0, 16
+	stb	6, 2(3)
 	b	.Lexit
 
 .Lfound_on_byte_1:
-	srdi	6,0,56
-	stb	6,0(3)
+	sth	0, 0(3)
+	b	.Lexit
+
+.Lfound_on_byte_0:
+	stb	0, 0(3)
 .Lexit:
-	xor	0,0,0   /* Erase data from register 0. */
-	ld	3,-8(1) /* Load destination address. */
+	ld	3, -8(1)  /* Load destination address. */
 	blr
-	
+
 .section .note.GNU-stack,"",%progbits
